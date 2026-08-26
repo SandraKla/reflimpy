@@ -8,3 +8,17 @@ results.
 An example showing how to call the R package
 [`reflimR`](https://cran.r-project.org/package=reflimR) from Python is available
 as a [GitHub Gist](https://gist.github.com/SandraKla/63be08f665428d25eed8b9decd4e5a1e).
+
+## Development
+
+Install the package in editable mode with its test dependencies:
+
+```powershell
+python -m pip install -e ".[test]"
+```
+
+Run the test suite:
+
+```powershell
+python -m pytest
+```

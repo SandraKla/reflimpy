@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reflimpy"
+version = "0.1.0"
+description = "Reference limit estimation using routine laboratory data"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "GPL-2.0-only"
+dependencies = [
+    "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--import-mode=importlib"]
