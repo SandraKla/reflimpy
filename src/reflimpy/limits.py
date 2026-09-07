@@ -80,3 +80,63 @@ def conf_int95(
             result[key] = round(float(result[key]), digits)
 
     return result
+
+
+def permissible_uncertainty(
+    lower_limit: Real,
+    upper_limit: Real,
+    apply_rounding: bool = True,
+) -> dict[str, float]:
+    """Calculate permissible uncertainty around reference limits."""
+    if (
+        isinstance(lower_limit, bool)
+        or not isinstance(lower_limit, Real)
+        or isinstance(upper_limit, bool)
+        or not isinstance(upper_limit, Real)
+    ):
+        raise TypeError("limits must be real numbers")
+
+    lower = float(lower_limit)
+    upper = float(upper_limit)
+
+    if not isfinite(lower) or not isfinite(upper):
+        raise ValueError("limits must be finite")
+
+    if lower <= 0 or upper <= 0 or lower >= upper:
+        raise ValueError(
+            "limits must be positive and upper_limit must be "
+            "higher than lower_limit"
+        )
+
+    geometric_mean = sqrt(lower * upper)
+    sigma_log = (log(upper) - log(lower)) / 3.92
+    cv_e = 100 * sqrt(exp(sigma_log**2) - 1)
+
+    if cv_e < 0.25:
+        raise ValueError("the interval between the limits is too small")
+
+    factor = sqrt(cv_e - 0.25)
+    uncertainty_lower = (
+        factor * (1.024 * lower + 0.256 * geometric_mean) / 100
+    )
+    uncertainty_upper = (
+        factor * (1.024 * upper + 0.256 * geometric_mean) / 100
+    )
+
+    result = {
+        "lower_lim_low": lower - uncertainty_lower,
+        "lower_lim_upp": lower + uncertainty_lower,
+        "upper_lim_low": upper - uncertainty_upper,
+        "upper_lim_upp": upper + uncertainty_upper,
+    }
+
+    if apply_rounding:
+        digits = int(
+            adjust_digits(result["lower_lim_low"])["digits"]
+        )
+        result = {
+            key: round(value, digits)
+            for key, value in result.items()
+        }
+
+    return result

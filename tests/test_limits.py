@@ -4,7 +4,7 @@ import math
 
 import pytest
 
-from reflimpy import conf_int95
+from reflimpy import conf_int95, permissible_uncertainty
 
 
 def test_conf_int95_without_lognormal_or_rounding() -> None:
@@ -180,3 +180,103 @@ def test_conf_int95_requires_positive_lognormal_limits() -> None:
             upper_limit=10,
             lognormal=True,
         )
+
+
+def test_permissible_uncertainty_without_rounding() -> None:
+    """Unrounded uncertainty limits match known results."""
+    result = permissible_uncertainty(
+        lower_limit=2.5,
+        upper_limit=97.5,
+        apply_rounding=False,
+    )
+
+    assert result["lower_lim_low"] == pytest.approx(
+        1.7881531509897748
+    )
+    assert result["lower_lim_upp"] == pytest.approx(
+        3.211846849010225
+    )
+    assert result["upper_lim_low"] == pytest.approx(
+        86.22683131701096
+    )
+    assert result["upper_lim_upp"] == pytest.approx(
+        108.77316868298904
+    )
+
+
+def test_permissible_uncertainty_applies_rounding() -> None:
+    """Uncertainty limits are rounded consistently."""
+    result = permissible_uncertainty(
+        lower_limit=2.5,
+        upper_limit=97.5,
+    )
+
+    assert result == {
+        "lower_lim_low": 1.79,
+        "lower_lim_upp": 3.21,
+        "upper_lim_low": 86.23,
+        "upper_lim_upp": 108.77,
+    }
+
+
+@pytest.mark.parametrize(
+    ("lower_limit", "upper_limit"),
+    [
+        (0.0, 10.0),
+        (-1.0, 10.0),
+        (10.0, 10.0),
+        (20.0, 10.0),
+    ],
+)
+def test_permissible_uncertainty_rejects_invalid_limits(
+    lower_limit: float,
+    upper_limit: float,
+) -> None:
+    """Limits must be positive and in ascending order."""
+    with pytest.raises(
+        ValueError,
+        match="limits must be positive",
+    ):
+        permissible_uncertainty(lower_limit, upper_limit)
+
+
+@pytest.mark.parametrize(
+    ("lower_limit", "upper_limit"),
+    [
+        (math.nan, 10.0),
+        (1.0, math.inf),
+        (1.0, -math.inf),
+    ],
+)
+def test_permissible_uncertainty_rejects_non_finite_limits(
+    lower_limit: float,
+    upper_limit: float,
+) -> None:
+    """NaN and infinite limits are rejected."""
+    with pytest.raises(ValueError, match="limits must be finite"):
+        permissible_uncertainty(lower_limit, upper_limit)
+
+
+@pytest.mark.parametrize(
+    ("lower_limit", "upper_limit"),
+    [
+        (True, 10.0),
+        (1.0, "10"),
+    ],
+)
+def test_permissible_uncertainty_rejects_non_real_limits(
+    lower_limit: object,
+    upper_limit: object,
+) -> None:
+    """Boolean and non-numeric limits are rejected."""
+    with pytest.raises(TypeError, match="limits must be real numbers"):
+        permissible_uncertainty(
+            lower_limit,  # type: ignore[arg-type]
+            upper_limit,  # type: ignore[arg-type]
+        )
+
+
+def test_permissible_uncertainty_rejects_too_small_interval() -> None:
+    """An interval too narrow for the formula is rejected."""
+    with pytest.raises(ValueError, match="interval.*too small"):
+        permissible_uncertainty(100.0, 100.001)
