@@ -5,6 +5,7 @@ from ._statistics import bowley, lognorm
 from .iboxplot import iboxplot
 from .interpretation import interpretation
 from .limits import conf_int95, permissible_uncertainty
+from .truncated_qqplot import truncated_qqplot
 
 __all__ = [
     "adjust_digits",
@@ -14,4 +15,5 @@ __all__ = [
     "interpretation",
     "lognorm",
     "permissible_uncertainty",
+    "truncated_qqplot",
 ]
